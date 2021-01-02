@@ -23,7 +23,14 @@ student_data_w_scores
 #Parental Level of Education
 ggplot(data = student_data, aes(`Parental Level of Education`, fill=`Parental Level of Education`)) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust=-0.5) + ylab("Student Count")
 ggplot(student_data, aes(Gender, fill=Gender)) + geom_bar() +  geom_text(stat='count', aes(label=..count..), vjust=2)  + facet_wrap(vars(`Parental Level of Education`)) + labs(y='Student Count') + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank()) 
-ggplot(student_data_w_scores) + geom_boxplot(aes(y = Score, x = `Parental Level of Education`, fill=`Parental Level of Education`)) + facet_grid(. ~ Subject) 
+
+educ_order <- c("master's degree","bachelor's degree", "associate's degree","some college", "high school", "some high school")
+ggplot(student_data_w_scores, aes(y = Score, x = fct_relevel(`Parental Level of Education`,educ_order), fill=fct_relevel(`Parental Level of Education`, educ_order))) +
+  geom_boxplot() + 
+  stat_summary(fun=mean, geom="point") +
+  facet_grid(. ~ Subject) + labs(x="Parental Level of Education") +
+  scale_x_discrete(guide = guide_axis(angle = 80)) + 
+  guides(fill=guide_legend(title="Parental Level of Education"))
 
 #Gender
 ggplot(data = student_data, aes(Gender, fill=`Gender`)) + geom_bar(width = 0.85) + geom_text(stat='count', aes(label=..count..), vjust=2)+ labs(y='Student Count') 
@@ -47,8 +54,8 @@ mens_scores <- student_data_w_scores %>% filter(Gender == 'male')
 females_scores <- student_data_w_scores %>% filter(Gender == 'female')
 
 require(gridExtra)
-p1 <- ggplot(mens_scores, aes(Score)) + geom_histogram(fill="orange") + facet_grid(. ~ Subject) + labs(title="Mens Scores Distribution", y="Student Count")
-p2 <- ggplot(females_scores, aes(Score)) + geom_histogram(fill="blue") + facet_grid(. ~ Subject) + labs(title = "Womens Scores Distribution", y="Student Count")
+p1 <- ggplot(mens_scores, aes(Score)) + geom_histogram(fill="orange",color='black') + facet_grid(. ~ Subject) + labs(title="Mens Scores Distribution", y="Student Count")
+p2 <- ggplot(females_scores, aes(Score)) + geom_histogram(fill="lightblue",color='black') + facet_grid(. ~ Subject) + labs(title = "Womens Scores Distribution", y="Student Count")
 grid.arrange(p1,p2,nrow = 2)
 
 gc()
@@ -67,11 +74,7 @@ ggplot(student_data, aes(x = student_data$`Test Preparation Course`)) +
   labs(title ='Test Preparation Course by Race/Ethnicity') +
   theme(legend.position = "none")
 
-require(gridExtra)
-box1 <- ggplot(student_data, aes(x=`race/ethnicity`, y=`math score`, fill=`race/ethnicity`),  color="black") + geom_boxplot() + theme(legend.position = "none") 
-box2 <- ggplot(student_data, aes(x=`race/ethnicity`, y=`reading score`, fill=`race/ethnicity`), color="black") + geom_boxplot() + theme(legend.position = "none") 
-box3 <-ggplot(student_data, aes(x=`race/ethnicity`, y=`writing score`, fill=`race/ethnicity`), color="black") + geom_boxplot() + theme(legend.position = "none") 
-grid.arrange(box1,box2,box3,ncol=3)
+ggplot(student_data_w_scores, aes(x=`Race/Ethnicity`, y=`Score`, fill=`Race/Ethnicity`)) + geom_boxplot() + stat_summary(fun=mean, geom="point") + facet_grid(. ~ Subject)   
 
 #Scores
 require(gridExtra)
@@ -81,8 +84,8 @@ writing <-ggplot(student_data,aes(`Writing Score`)) + geom_histogram(fill='light
 grid.arrange(math,reading,writing, nrow=3)
 
 #Lunch
-ggplot(student_data, aes(x=lunch, y=avg, fill=lunch)) + geom_boxplot() + labs(y="Average Score", x="Lunch") + guides(fill=guide_legend(title="Lunch"))
-lunch_avg <- lm(avg ~ lunch, student_data)
+ggplot(student_data, aes(x=Lunch, y=`Average Score`, fill=Lunch)) + geom_boxplot() + stat_summary(fun=mean, geom="point")
+lunch_avg <- lm(`Average Score` ~ Lunch, student_data)
 summary(lunch_avg)
 #H0 = there is no change in averages from lunches
 #H1 = there is a change in averages from lunches
@@ -91,31 +94,42 @@ summary(lunch_avg)
 
 
 require(gridExtra)
-p1 <- ggplot(student_data, aes(x=lunch, y=`math score`, fill=lunch)) + 
+p1 <- ggplot(student_data, aes(x=Lunch, y=`Math Score`, fill=Lunch)) + 
   geom_boxplot() +
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point") 
 
-p2 <-  ggplot(student_data, aes(x=lunch, y=`reading score`, fill=lunch)) + 
+p2 <-  ggplot(student_data, aes(x=Lunch, y=`Reading Score`, fill=Lunch)) + 
   geom_boxplot() +
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point") 
 
-p3 <-  ggplot(student_data, aes(x=lunch, y=`writing score`, fill=lunch)) + 
+p3 <-  ggplot(student_data, aes(x=Lunch, y=`Writing Score`, fill=Lunch)) + 
   geom_boxplot() +
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point") 
 grid.arrange(p1,p2,p3, ncol = 3)
 
+ggplot(student_data_w_scores, aes(x=Lunch, y=Score, fill=Lunch)) + geom_boxplot() + stat_summary(fun=mean, geom="point") + facet_grid(. ~ Subject) 
+
 #Test Preparation Course
-ggplot(student_data, aes(x=`test preparation course`, y=avg, fill=`test preparation course`)) + 
+ggplot(student_data, aes(x=`Test Preparation Course`, y=`Average Score`, fill=`Test Preparation Course`)) + 
   geom_boxplot() +
-  stat_summary(fun=mean, geom="point") +
-  labs(y="Average Score", x="Test Preparation Course") +
-  guides(fill=guide_legend(title="Test Preparation Course"))
+  stat_summary(fun=mean, geom="point") 
 
 #Correlation
-ggplot(student_data) + geom_point(aes(x=`math score`, y=`reading score`))
-ggplot(student_data) + geom_point(aes(x=`writing score`, y=`reading score`))
-ggplot(student_data) + geom_point(aes(x=`reading score`, y=`writing score`))
-ggplot(student_data) + geom_point(aes(x=`math score`, y=`writing score`))
+ggplot(student_data) + geom_point(aes(x=`Math Score`, y=`Reading Score`))
+ggplot(student_data) + geom_point(aes(x=`Writing Score`, y=`Reading Score`))
+ggplot(student_data) + geom_point(aes(x=`Reading Score`, y=`Writing Score`))
+ggplot(student_data) + geom_point(aes(x=`Math Score`, y=`Writing Score`))
+
+?lm
+lunch_avg <- lm(`Average Score` ~ Lunch, student_data)
+summary(lunch_avg)
+
+read_write <- lm(`Reading Score` ~ `Writing Score`, student_data)
+math_write <- lm(`Math Score` ~ `Writing Score`, student_data)
+read_math<- lm(`Reading Score` ~ `Math Score`, student_data)
+summary(read_write)
+summary(math_write)
+summary(read_math)
