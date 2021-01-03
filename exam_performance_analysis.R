@@ -113,7 +113,15 @@ writing <-ggplot(student_data,aes(`Writing Score`)) + geom_histogram(fill='light
 grid.arrange(math,reading,writing, nrow=3)
 
 #Lunch
+ggplot(student_data,aes(Lunch, fill=Lunch)) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust=2) +ylab("Student Count")
 ggplot(student_data, aes(x=Lunch, y=`Average Score`, fill=Lunch)) + geom_boxplot() + stat_summary(fun=mean, geom="point")
+
+avg_lunch <- student_data %>% group_by(Lunch) %>% summarize(`Average Score` = mean(`Average Score`))
+avg_lunch
+
+avg_lunch_persubj <- student_data %>% group_by(Lunch) %>% summarize(`Avg Math Score` = mean(`Math Score`), `Avg Reading Score`= mean(`Reading Score`), `Avg Writing Score`=mean(`Writing Score`))
+avg_lunch_persubj
+
 lunch_avg <- lm(`Average Score` ~ Lunch, student_data)
 summary(lunch_avg)
 #H0 = there is no change in averages from lunches
@@ -126,12 +134,10 @@ p1 <- ggplot(student_data, aes(x=Lunch, y=`Math Score`, fill=Lunch)) +
   geom_boxplot() +
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point") 
-
 p2 <-  ggplot(student_data, aes(x=Lunch, y=`Reading Score`, fill=Lunch)) + 
   geom_boxplot() +
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point") 
-
 p3 <-  ggplot(student_data, aes(x=Lunch, y=`Writing Score`, fill=Lunch)) + 
   geom_boxplot() +
   theme(legend.position = "none") +
@@ -171,10 +177,6 @@ cor(student_data$`Math Score`, student_data$`Writing Score`, method="pearson")
 shapiro.test(student_data$`Math Score`)
 shapiro.test(student_data$`Writing Score`)
 shapiro.test(student_data$`Reading Score`)
-
-?lm
-lunch_avg <- lm(`Average Score` ~ Lunch, student_data)
-summary(lunch_avg)
 
 read_write <- lm(`Reading Score` ~ `Writing Score`, student_data)
 math_write <- lm(`Math Score` ~ `Writing Score`, student_data)
