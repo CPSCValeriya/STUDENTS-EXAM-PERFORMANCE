@@ -65,6 +65,7 @@ p1 <- ggplot(mens_scores, aes(Score)) + geom_histogram(fill="orange",color='blac
 p2 <- ggplot(females_scores, aes(Score)) + geom_histogram(fill="lightblue",color='black') + facet_grid(. ~ Subject) + labs(title = "Womens Scores Distribution", y="Student Count")
 grid.arrange(p1,p2,nrow = 2)
 
+#https://stackoverflow.com/questions/2547402/how-to-find-the-statistical-mode
 Mode <- function(x) {
   ux <- unique(x)
   ux[which.max(tabulate(match(x, ux)))]
@@ -152,6 +153,7 @@ ggplot(student_data) + geom_point(aes(x=`Writing Score`, y=`Reading Score`))
 ggplot(student_data) + geom_point(aes(x=`Reading Score`, y=`Writing Score`))
 ggplot(student_data) + geom_point(aes(x=`Math Score`, y=`Writing Score`))
 
+#http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r
 ggscatter(student_data, x = "Math Score", y = "Reading Score", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson")
