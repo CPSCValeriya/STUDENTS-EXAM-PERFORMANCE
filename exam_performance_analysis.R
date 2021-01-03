@@ -1,7 +1,10 @@
+install.packages("ggpubr")
+library("ggpubr")
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
 #DATA VISUALIZATIONS
+
 student_data <- read_csv("StudentsPerformance.csv", 
                          col_types = cols(
                            gender = col_factor(),
@@ -21,10 +24,11 @@ student_data_w_scores <- student_data %>% gather(`Math Score`:`Writing Score`, k
 student_data_w_scores
 
 #Parental Level of Education
-ggplot(data = student_data, aes(`Parental Level of Education`, fill=`Parental Level of Education`)) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust=-0.5) + ylab("Student Count")
+educ_order <- c("master's degree","bachelor's degree", "associate's degree","some college", "high school", "some high school")
+
+ggplot(data = student_data, aes(fct_relevel(`Parental Level of Education`,educ_order), fill=fct_relevel(`Parental Level of Education`, educ_order))) + geom_bar() + geom_text(stat='count', aes(label=..count..), vjust=-0.5) + labs(y="Student Count", x="Parental Level of Education") + guides(fill=guide_legend(title="Parental Level of Education"))
 ggplot(student_data, aes(Gender, fill=Gender)) + geom_bar() +  geom_text(stat='count', aes(label=..count..), vjust=2)  + facet_wrap(vars(`Parental Level of Education`)) + labs(y='Student Count') + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank()) 
 
-educ_order <- c("master's degree","bachelor's degree", "associate's degree","some college", "high school", "some high school")
 ggplot(student_data_w_scores, aes(y = Score, x = fct_relevel(`Parental Level of Education`,educ_order), fill=fct_relevel(`Parental Level of Education`, educ_order))) +
   geom_boxplot() + 
   stat_summary(fun=mean, geom="point") +
@@ -32,6 +36,9 @@ ggplot(student_data_w_scores, aes(y = Score, x = fct_relevel(`Parental Level of 
   scale_x_discrete(guide = guide_axis(angle = 80)) + 
   guides(fill=guide_legend(title="Parental Level of Education"))
 
+avg_grades_by_parentaleduc <- student_data %>% group_by(fct_relevel(`Parental Level of Education`, educ_order)) %>% summarize(`Avg Math Score` = mean(`Math Score`), `Avg Reading Score` = mean(`Reading Score`), `Avg Writing Score` = mean(`Writing Score`)) 
+colnames(avg_grades_by_parentaleduc)[1] = "Parental Level of Education"
+avg_grades_by_parentaleduc
 #Gender
 ggplot(data = student_data, aes(Gender, fill=`Gender`)) + geom_bar(width = 0.85) + geom_text(stat='count', aes(label=..count..), vjust=2)+ labs(y='Student Count') 
 men_math_score <- filter(student_data, Gender=="male") %>% select(`Math Score`)
@@ -58,6 +65,23 @@ p1 <- ggplot(mens_scores, aes(Score)) + geom_histogram(fill="orange",color='blac
 p2 <- ggplot(females_scores, aes(Score)) + geom_histogram(fill="lightblue",color='black') + facet_grid(. ~ Subject) + labs(title = "Womens Scores Distribution", y="Student Count")
 grid.arrange(p1,p2,nrow = 2)
 
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+mens_scores %>% group_by(Subject) %>% summarize(min = min(Score), max=max(Score), sd = sd(Score), mode = Mode(Score), mean = mean(Score))
+females_scores %>% group_by(Subject) %>% summarize(min = min(Score), max=max(Score), sd = sd(Score), mode = Mode(Score), mean=mean(Score))
+
+mens_scores %>% group_by(Subject) %>% summarize( mean = mean(Score))
+females_scores %>% group_by(Subject) %>% summarize(mean=mean(Score))
+
+
+females_scores %>% group_by(Subject) %>% filter(Score == 0) %>% count()
+mens_scores  %>% group_by(Subject) %>% filter(Score == 0) %>% count()
+females_scores %>% group_by(Subject) %>% filter(Score < 50) %>% count()
+mens_scores  %>% group_by(Subject) %>% filter(Score < 50) %>% count()
+
 gc()
 
 ggplot(student_data_w_scores, aes(x=Gender, y=Score, fill=Gender)) + geom_boxplot() + stat_summary(fun=mean, geom="point") +facet_grid(. ~ Subject)
@@ -67,14 +91,18 @@ ggplot(student_data, aes(`Race/Ethnicity`, fill=`Race/Ethnicity`)) + geom_bar() 
 
 ggplot(student_data, aes(x = student_data$`Test Preparation Course`)) +
   geom_bar(position = position_dodge(width = 0.8), binwidth = 25, fill="orange") +
-  facet_wrap(~student_data$`Race/Ethnicity`) + 
+  facet_wrap(~student_data$`Race/Ethnicity`, ncol = 5) + 
   geom_text(stat='count', aes(label=..count..), vjust=2)  +
   ylab('Student Count') +
   xlab('Test Preparation Course') +
-  labs(title ='Test Preparation Course by Race/Ethnicity') +
-  theme(legend.position = "none")
+  labs(title ='Test Preparation Course by Race/Ethnicity') 
+
+test_prep_by_race <- student_data %>% group_by(`Race/Ethnicity`, `Test Preparation Course`) %>% count(`Test Preparation Course`) %>% spread(key = `Test Preparation Course`, value=n) 
+test_prep_by_race <- test_prep_by_race %>% mutate(`% Completed`  = completed/(none+completed))
+test_prep_by_race
 
 ggplot(student_data_w_scores, aes(x=`Race/Ethnicity`, y=`Score`, fill=`Race/Ethnicity`)) + geom_boxplot() + stat_summary(fun=mean, geom="point") + facet_grid(. ~ Subject)   
+student_data_w_scores %>% group_by(`Race/Ethnicity`, Subject) %>% select(Subject, Score) %>% summarize(`Avg Score`= mean(Score)) %>% arrange(Subject, desc(`Avg Score`))
 
 #Scores
 require(gridExtra)
@@ -91,7 +119,6 @@ summary(lunch_avg)
 #H1 = there is a change in averages from lunches
 #As the p-value is much less than 0.05, we reject the null hypothesis 
 #Therefore, there is a significant relationship between the variables of average score and lunch.
-
 
 require(gridExtra)
 p1 <- ggplot(student_data, aes(x=Lunch, y=`Math Score`, fill=Lunch)) + 
@@ -117,11 +144,31 @@ ggplot(student_data, aes(x=`Test Preparation Course`, y=`Average Score`, fill=`T
   geom_boxplot() +
   stat_summary(fun=mean, geom="point") 
 
+student_data %>% group_by(`Test Preparation Course`) %>% summarize("Avg Math Score" = mean(`Math Score`), "Avg Writing Score" = mean(`Writing Score`), 'Avg Reading Score' = mean(`Reading Score`))
+
 #Correlation
 ggplot(student_data) + geom_point(aes(x=`Math Score`, y=`Reading Score`))
 ggplot(student_data) + geom_point(aes(x=`Writing Score`, y=`Reading Score`))
 ggplot(student_data) + geom_point(aes(x=`Reading Score`, y=`Writing Score`))
 ggplot(student_data) + geom_point(aes(x=`Math Score`, y=`Writing Score`))
+
+ggscatter(student_data, x = "Math Score", y = "Reading Score", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson")
+ggscatter(student_data, x = "Reading Score", y = "Writing Score", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson")
+ggscatter(student_data, x = "Math Score", y = "Writing Score", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson")
+
+cor(student_data$`Math Score`, student_data$`Reading Score`, method="pearson")
+cor(student_data$`Reading Score`, student_data$`Writing Score`, method="pearson")
+cor(student_data$`Math Score`, student_data$`Writing Score`, method="pearson")
+
+shapiro.test(student_data$`Math Score`)
+shapiro.test(student_data$`Writing Score`)
+shapiro.test(student_data$`Reading Score`)
 
 ?lm
 lunch_avg <- lm(`Average Score` ~ Lunch, student_data)
